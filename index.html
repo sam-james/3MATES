@@ -493,7 +493,7 @@
   <span class="section-label" style="display:block;margin-bottom:1rem;">Get in Touch</span>
   <h2 class="section-heading">Ready to <em>Order?</em></h2>
   <p>Tell us what you're after and we'll be in touch. We take orders with 24 hours (or less!) notice</p>
-  <form class="order-form" onsubmit="handleSubmit(event)">
+  <form class="order-form" action="https://formspree.io/f/mvznaoby" method="POST">
     <div class="form-row">
       <input type="text" class="form-field" placeholder="Your Name" required>
       <input type="email" class="form-field" placeholder="Email Address" required>
@@ -545,7 +545,6 @@
   }
 
   // Form submit
-  function handleSubmit(e) {
     e.preventDefault();
     const btn = e.target.querySelector('.form-submit');
     btn.textContent = '✓ Enquiry Sent!';
