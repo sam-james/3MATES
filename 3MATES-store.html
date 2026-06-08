@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3 Mates Canmore — Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&family=Fraunces:ital,wght@0,800;1,600&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+  SNIPCART — Handles cart, checkout & Stripe payments
+  Setup steps (5 mins):
+  1. Sign up free at snipcart.com
+  2. Go to Account > API Keys > copy your PUBLIC API key
+  3. Replace YOUR_PUBLIC_API_KEY below with your key
+  4. In Snipcart dashboard, go to Payment > Stripe > Connect
+  5. Update data-item-url on each product to match your live URL
+     e.g. https://3mates.ca/shop.html
+  ============================================================ -->
+<link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.3.3/default/snipcart.css" />
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --pink: #FFBDCC;
+    --pink-light: #FFD6E0;
+    --pink-dark: #F5A0B5;
+    --red: #E80012;
+    --red-dark: #C0000E;
+    --white: #FFFFFF;
+    --cream: #FFF8F0;
+    --dark: #1A0A0E;
+    --mid: #5C2030;
+    --grey: #f5f5f5;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--pink);
+    color: var(--dark);
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: grid; grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0.5rem 4rem;
+    background: var(--pink);
+    border-bottom: 2px solid var(--red);
+  }
+  nav ul { list-style: none; display: flex; gap: 2rem; justify-content: flex-start; }
+  nav ul a {
+    font-size: 0.82rem; font-weight: 500; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--red); text-decoration: none;
+    position: relative;
+  }
+  nav ul a::after {
+    content: ''; position: absolute; bottom: -3px; left: 0; right: 0;
+    height: 2px; background: var(--red);
+    transform: scaleX(0); transition: transform 0.25s ease; transform-origin: left;
+  }
+  nav ul a:hover::after, nav ul a.active::after { transform: scaleX(1); }
+  .nav-logo-wrap {
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-logo-wrap img { height: 70px; width: auto; display: block; }
+  .nav-right {
+    display: flex; align-items: center; justify-content: flex-end; gap: 1rem;
+  }
+  .cart-btn {
+    background: var(--red); color: var(--white);
+    border: none; border-radius: 999px;
+    padding: 0.6rem 1.4rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    transition: background 0.2s;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .cart-btn:hover { background: var(--red-dark); }
+  .cart-count {
+    background: var(--white); color: var(--red);
+    width: 20px; height: 20px; border-radius: 50%;
+    font-size: 0.7rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── TICKER ── */
+  .ticker { background: var(--white); color: var(--red); padding: 0.9rem 0; overflow: hidden; display: flex; margin-top: 81px; }
+  .ticker-track {
+    display: flex; white-space: nowrap;
+    animation: ticker 22s linear infinite;
+  }
+  .ticker-item {
+    font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 0 2.5rem; flex-shrink: 0;
+    display: flex; align-items: center; gap: 1.5rem;
+  }
+  .ticker-item::after { content: '✦'; font-size: 0.5rem; }
+  @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  /* ── SHOP HERO ── */
+  .shop-hero {
+    background: var(--pink);
+    padding: 5rem 4rem 4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 2rem; position: relative; overflow: hidden;
+  }
+  .shop-hero-bg {
+    position: absolute; right: -80px; top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Playfair Display', serif;
+    font-size: 400px; font-weight: 900; line-height: 1;
+    color: rgba(232,0,18,0.05);
+    pointer-events: none; user-select: none;
+  }
+  .shop-hero-content { position: relative; z-index: 1; }
+  .shop-eyebrow {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--red); margin-bottom: 1rem;
+  }
+  .shop-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 6vw, 6rem);
+    font-weight: 900; line-height: 0.9;
+    color: var(--white);
+    text-shadow: 4px 4px 0 var(--red);
+  }
+  .shop-title em { font-style: italic; color: var(--red); text-shadow: 3px 3px 0 var(--white); }
+  .shop-hero-sub {
+    font-size: 1rem; font-weight: 300; color: var(--white);
+    max-width: 400px; line-height: 1.7; margin-top: 1.5rem;
+  }
+  .shop-hero-badges {
+    display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem;
+  }
+  .badge {
+    background: var(--white); color: var(--red);
+    border: 2px solid var(--red);
+    padding: 0.4rem 1rem; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── FILTERS ── */
+  .filter-bar {
+    background: var(--white);
+    border-bottom: 2px solid var(--pink-dark);
+    padding: 1.2rem 4rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    flex-wrap: wrap; position: sticky; top: 81px; z-index: 50;
+  }
+  .filter-label {
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.2em;
+    text-transform: uppercase; color: #aaa; margin-right: 0.5rem;
+  }
+  .filter-btn {
+    background: none; border: 2px solid var(--pink-dark);
+    padding: 0.5rem 1.2rem; border-radius: 999px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; cursor: pointer; color: var(--mid);
+    transition: all 0.2s;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    background: var(--red); border-color: var(--red); color: var(--white);
+  }
+
+  /* ── PRODUCT GRID ── */
+  .shop-main {
+    background: var(--cream);
+    padding: 4rem;
+  }
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+  }
+
+  /* ── PRODUCT CARD ── */
+  .product-card {
+    background: var(--white);
+    border-radius: 24px;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .product-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 60px rgba(232,0,18,0.12);
+  }
+  .product-img {
+    width: 100%; height: 240px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .product-emoji-bg {
+    position: absolute; font-size: 10rem; opacity: 0.1;
+    top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-10deg);
+  }
+  .product-emoji { font-size: 5rem; position: relative; z-index: 1; }
+  .product-badge-tag {
+    position: absolute; top: 1rem; left: 1rem;
+    background: var(--red); color: var(--white);
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; padding: 0.3rem 0.8rem; border-radius: 999px;
+    z-index: 2;
+  }
+  .product-body { padding: 1.8rem; display: flex; flex-direction: column; flex: 1; }
+  .product-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem; font-weight: 900; color: var(--dark);
+    line-height: 1;
+  }
+  .product-desc {
+    font-size: 0.85rem; font-weight: 300; color: #888;
+    line-height: 1.6; margin-top: 0.5rem;
+  }
+
+  /* Variant selector */
+  .variant-section { margin-top: 1.2rem; flex: 1; }
+  .variant-label {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--mid); margin-bottom: 0.5rem;
+    display: block;
+  }
+  .variant-options { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .variant-btn {
+    background: none; border: 1.5px solid var(--pink-dark);
+    padding: 0.35rem 0.9rem; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem; font-weight: 500; color: var(--mid);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .variant-btn.selected {
+    background: var(--red); border-color: var(--red); color: var(--white);
+    font-weight: 600;
+  }
+
+  /* Flavour selector */
+  .flavour-select {
+    width: 100%; margin-top: 0.8rem;
+    background: var(--grey); border: 1.5px solid var(--pink-dark);
+    border-radius: 10px; padding: 0.7rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; color: var(--dark);
+    appearance: none; cursor: pointer;
+    outline: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23E80012' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+  }
+
+  /* Price + CTA */
+  .product-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: auto; padding-top: 1.5rem;
+    border-top: 1px solid var(--pink-light);
+  }
+  .product-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; font-weight: 900; color: var(--dark);
+    line-height: 1;
+  }
+  .product-price span {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem; font-weight: 400; color: #aaa;
+    display: block; margin-top: 0.1rem;
+  }
+  .add-btn {
+    background: var(--red); color: var(--white);
+    border: none; border-radius: 999px;
+    padding: 0.8rem 1.8rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .add-btn:hover { background: var(--red-dark); transform: scale(1.03); }
+  .add-btn.added { background: #2C9E50; }
+
+  /* ── HOW IT WORKS ── */
+  .how-section {
+    background: var(--red);
+    padding: 6rem 4rem;
+    text-align: center;
+  }
+  .how-eyebrow {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3em;
+    text-transform: uppercase; color: rgba(255,255,255,0.6);
+    margin-bottom: 1rem;
+  }
+  .how-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 900; color: var(--white);
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.12);
+    margin-bottom: 4rem;
+  }
+  .how-title em { font-style: italic; color: var(--pink); text-shadow: none; }
+  .how-steps {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 2rem; max-width: 900px; margin: 0 auto;
+  }
+  .how-step { text-align: center; }
+  .step-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem; font-weight: 900;
+    color: rgba(255,255,255,0.2); line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .step-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .step-title {
+    font-weight: 700; color: var(--white);
+    font-size: 0.95rem; margin-bottom: 0.4rem;
+  }
+  .step-desc {
+    font-size: 0.82rem; font-weight: 300;
+    color: rgba(255,255,255,0.65); line-height: 1.5;
+  }
+
+  /* ── DELIVERY BANNER ── */
+  .delivery-banner {
+    background: var(--pink);
+    padding: 3rem 4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 2rem; flex-wrap: wrap;
+    border-top: 2px solid var(--red);
+    border-bottom: 2px solid var(--red);
+  }
+  .delivery-item {
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .delivery-icon { font-size: 2rem; }
+  .delivery-title {
+    font-weight: 700; font-size: 0.9rem; color: var(--white);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .delivery-sub { font-size: 0.8rem; color: var(--white); font-weight: 300; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--red); color: var(--white);
+    padding: 2.5rem 4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1.5rem;
+  }
+  .footer-logo {
+    font-family: 'Fraunces', serif;
+    font-size: 1.3rem; font-weight: 800;
+    text-shadow: 2px 2px 0 var(--pink-dark);
+  }
+  .footer-links { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .footer-links a {
+    color: rgba(255,255,255,0.75); text-decoration: none;
+    font-size: 0.82rem; transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--white); }
+  .footer-copy { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
+
+  /* ── SNIPCART THEME OVERRIDES ── */
+  :root {
+    --color-default: var(--dark);
+    --color-alt: var(--mid);
+    --color-badge: var(--red);
+    --color-badge-active: var(--red-dark);
+    --color-button-default: var(--red);
+    --color-button-hover: var(--red-dark);
+    --color-input-default: var(--dark);
+    --color-link: var(--red);
+    --color-link-hover: var(--red-dark);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1.2rem; }
+    nav ul { display: none; }
+    .nav-logo-wrap img { height: 55px; }
+    .ticker { margin-top: 62px; }
+    .shop-hero { padding: 3rem 1.5rem; flex-direction: column; }
+    .shop-hero-bg { display: none; }
+    .filter-bar { padding: 1rem 1.5rem; top: 72px; }
+    .shop-main { padding: 2rem 1.5rem; }
+    .products-grid { grid-template-columns: 1fr; }
+    .how-section { padding: 4rem 1.5rem; }
+    .how-steps { grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .delivery-banner { padding: 2rem 1.5rem; flex-direction: column; gap: 1.5rem; }
+    footer { padding: 2rem 1.5rem; flex-direction: column; align-items: flex-start; }
+  }
+
+  @media (max-width: 480px) {
+    .how-steps { grid-template-columns: 1fr; }
+    .product-footer { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .add-btn { width: 100%; justify-content: center; }
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .product-card {
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+  }
+  .product-card:nth-child(1) { animation-delay: 0.05s; }
+  .product-card:nth-child(2) { animation-delay: 0.1s; }
+  .product-card:nth-child(3) { animation-delay: 0.15s; }
+  .product-card:nth-child(4) { animation-delay: 0.2s; }
+  .product-card:nth-child(5) { animation-delay: 0.25s; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="3MATES-menu.html">Menu</a></li>
+    <li><a href="index.html#about">About</a></li>
+  </ul>
+  <div class="nav-logo-wrap">
+    <a href="index.html"><img src="1.png" alt="3 Mates Canmore"></a>
+  </div>
+  <div class="nav-right">
+    <button class="cart-btn snipcart-checkout">
+      🛒 Cart
+      <span class="cart-count snipcart-items-count">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track" id="ticker"></div>
+</div>
+
+<!-- SHOP HERO -->
+<div class="shop-hero">
+  <div class="shop-hero-bg">🍪</div>
+  <div class="shop-hero-content">
+    <p class="shop-eyebrow">✦ Baked Fresh to Order ✦</p>
+    <h1 class="shop-title">Order <em>the good<br>stuff.</em></h1>
+    <p class="shop-hero-sub">Everything made from scratch, nothing from a box. Pick your treats, check out securely, and we'll get baking.</p>
+    <div class="shop-hero-badges">
+      <span class="badge">🚚 Local Delivery</span>
+      <span class="badge">🏠 Canmore + Banff</span>
+      <span class="badge">⚡ 24hr Notice</span>
+      <span class="badge">🔒 Secure Checkout</span>
+    </div>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="filter-label">Filter:</span>
+  <button class="filter-btn active" onclick="filterProducts('all', this)">All Treats</button>
+  <button class="filter-btn" onclick="filterProducts('blondies', this)">Blondies</button>
+  <button class="filter-btn" onclick="filterProducts('cookies', this)">Cookies</button>
+  <button class="filter-btn" onclick="filterProducts('banana', this)">Banana Bread</button>
+  <button class="filter-btn" onclick="filterProducts('smores', this)">S'mores Bars</button>
+</div>
+
+<!-- PRODUCTS -->
+<div class="shop-main">
+  <div class="products-grid" id="products-grid">
+
+    <!-- BLONDIES -->
+    <div class="product-card" data-cat="blondies">
+      <div class="product-img" style="background:#FFF3D6;">
+        <span class="product-emoji-bg">✨</span>
+        <span class="product-emoji">🧇</span>
+        <span class="product-badge-tag">Mouth-Watering</span>
+      </div>
+      <div class="product-body">
+        <div class="product-name">Blondies</div>
+        <div class="product-desc">The brownie's golden cousin. Brown butter, vanilla, white chocolate chunks — chewy middle, crisp edges.</div>
+        <div class="variant-section">
+          <span class="variant-label">Box Size</span>
+          <div class="variant-options">
+            <button class="variant-btn selected" onclick="selectVariant(this, 'blondie', 3, 0.00)">Box of 3</button>
+            <button class="variant-btn" onclick="selectVariant(this, 'blondie', 6, 0.00)">Box of 6</button>
+            <button class="variant-btn" onclick="selectVariant(this, 'blondie', 9, 0.00)">Box of 9</button>
+          </div>
+          <select class="flavour-select" id="blondie-flavour">
+            <option value="White Chocolate + Toffee">🍫 White Chocolate + Toffee</option>
+            <option value="Kinder">🎁 Kinder</option>
+          </select>
+        </div>
+        <div class="product-footer">
+          <div class="product-price" id="blondie-price">
+            $0.00
+            <span>CAD · Box of 3</span>
+          </div>
+          <button class="add-btn snipcart-add-item"
+            id="blondie-btn"
+            data-item-id="blondie-box-3"
+            data-item-price="0.00"
+            data-item-url="https://3mates.ca/shop.html"
+            data-item-name="Blondies — Box of 3"
+            data-item-description="Brown butter blondies"
+            data-item-custom1-name="Flavour"
+            data-item-custom1-options="White Chocolate + Toffee|Kinder"
+            onclick="animateAdd(this)">
+            Add to Cart +
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COOKIES -->
+    <div class="product-card" data-cat="cookies">
+      <div class="product-img" style="background:#FFE8D6;">
+        <span class="product-emoji-bg">🍪</span>
+        <span class="product-emoji">🍪</span>
+        <span class="product-badge-tag">Bestseller</span>
+      </div>
+      <div class="product-body">
+        <div class="product-name">Cookies</div>
+        <div class="product-desc">NYC-style thick and chewy. Crisp edges, soft centres. Rotating flavours — always a winner.</div>
+        <div class="variant-section">
+          <span class="variant-label">Box Size</span>
+          <div class="variant-options">
+            <button class="variant-btn selected" onclick="selectVariant(this, 'cookie', 3, 0.00)">Box of 3</button>
+            <button class="variant-btn" onclick="selectVariant(this, 'cookie', 6, 0.00)">Box of 6</button>
+            <button class="variant-btn" onclick="selectVariant(this, 'cookie', 9, 0.00)">Box of 9</button>
+          </div>
+          <select class="flavour-select" id="cookie-flavour">
+            <option value="Triple Chocolate">🍫 Triple Chocolate</option>
+            <option value="Biscoff Stuffed">🍪 Biscoff Stuffed</option>
+            <option value="Brown Butter Choc Chip">🧈 Brown Butter Choc Chip</option>
+            <option value="Mixed Box">🎁 Mixed Box</option>
+          </select>
+        </div>
+        <div class="product-footer">
+          <div class="product-price" id="cookie-price">
+            $0.00
+            <span>CAD · Box of 3</span>
+          </div>
+          <button class="add-btn snipcart-add-item"
+            id="cookie-btn"
+            data-item-id="cookie-box-3"
+            data-item-price="0.00"
+            data-item-url="https://3mates.ca/shop.html"
+            data-item-name="Cookies — Box of 3"
+            data-item-description="NYC-style thick and chewy cookies"
+            data-item-custom1-name="Flavour"
+            data-item-custom1-options="Triple Chocolate|Biscoff Stuffed|Brown Butter Choc Chip|Mixed Box"
+            onclick="animateAdd(this)">
+            Add to Cart +
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BANANA BREAD -->
+    <div class="product-card" data-cat="banana">
+      <div class="product-img" style="background:#FFF8D6;">
+        <span class="product-emoji-bg">🍌</span>
+        <span class="product-emoji">🍌</span>
+      </div>
+      <div class="product-body">
+        <div class="product-name">Banana Bread</div>
+        <div class="product-desc">Loaded with ripe bananas, baked low and slow. Moist, fluffy, perfect. Available plain or with chocolate swirl.</div>
+        <div class="variant-section">
+          <span class="variant-label">Size</span>
+          <div class="variant-options">
+            <button class="variant-btn selected" onclick="selectVariant(this, 'banana', 'half', 8.00)">Half Loaf</button>
+            <button class="variant-btn" onclick="selectVariant(this, 'banana', 'whole', 14.00)">Whole Loaf</button>
+          </div>
+          <select class="flavour-select" id="banana-flavour">
+            <option value="Classic">🍌 Classic</option>
+            <option value="Chocolate Swirl">🍫 Chocolate Swirl</option>
+            <option value="Walnut">🌰 Walnut</option>
+          </select>
+        </div>
+        <div class="product-footer">
+          <div class="product-price" id="banana-price">
+            $0.00
+            <span>CAD · Half Loaf</span>
+          </div>
+          <button class="add-btn snipcart-add-item"
+            id="banana-btn"
+            data-item-id="banana-bread-half"
+            data-item-price="0.00"
+            data-item-url="https://3mates.ca/shop.html"
+            data-item-name="Banana Bread — Half Loaf"
+            data-item-description="Freshly baked banana bread"
+            data-item-custom1-name="Flavour"
+            data-item-custom1-options="Classic|Chocolate Swirl|Walnut"
+            onclick="animateAdd(this)">
+            Add to Cart +
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- S'MORES BARS -->
+    <div class="product-card" data-cat="smores">
+      <div class="product-img" style="background:#FFE4CC;">
+        <span class="product-emoji-bg">🔥</span>
+        <span class="product-emoji">🏕️</span>
+        <span class="product-badge-tag">Limited</span>
+      </div>
+      <div class="product-body">
+        <div class="product-name">S'mores Bars</div>
+        <div class="product-desc">Graham cracker base, gooey chocolate ganache, toasted marshmallow top. A campfire in every bite.</div>
+        <div class="variant-section">
+          <span class="variant-label">Box Size</span>
+          <div class="variant-options">
+            <button class="variant-btn selected" onclick="selectVariant(this, 'smores', 3, 0.00)">Box of 3</button>
+            <button class="variant-btn" onclick="selectVariant(this, 'smores', 6, 0.00)">Box of 6</button>
+            <button class="variant-btn" onclick="selectVariant(this, 'smores', 9, 0.00)">Box of 9</button>
+          </div>
+        </div>
+        <div class="product-footer">
+          <div class="product-price" id="smores-price">
+            $0.00
+            <span>CAD · Box of 3</span>
+          </div>
+          <button class="add-btn snipcart-add-item"
+            id="smores-btn"
+            data-item-id="smores-box-3"
+            data-item-price="0.00"
+            data-item-url="https://3mates.ca/shop.html"
+            data-item-name="S'mores Bars — Box of 3"
+            data-item-description="Graham cracker, ganache, toasted marshmallow"
+            onclick="animateAdd(this)">
+            Add to Cart +
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DELIVERY INFO -->
+<div class="delivery-banner">
+  <div class="delivery-item">
+    <div class="delivery-icon">🚚</div>
+    <div>
+      <div class="delivery-title">Local Delivery</div>
+      <div class="delivery-sub">Canmore & Banff area</div>
+    </div>
+  </div>
+  <div class="delivery-item">
+    <div class="delivery-icon">🏠</div>
+    <div>
+      <div class="delivery-title">Free Pickup</div>
+      <div class="delivery-sub">Arrange at checkout</div>
+    </div>
+  </div>
+  <div class="delivery-item">
+    <div class="delivery-icon">⚡</div>
+    <div>
+      <div class="delivery-title">24hr Notice</div>
+      <div class="delivery-sub">Sometimes less — just ask!</div>
+    </div>
+  </div>
+  <div class="delivery-item">
+    <div class="delivery-icon">🔒</div>
+    <div>
+      <div class="delivery-title">Secure Payments</div>
+      <div class="delivery-sub">Powered by Stripe</div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="how-section">
+  <p class="how-eyebrow">✦ Simple as that ✦</p>
+  <h2 class="how-title">How it <em>works</em></h2>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="step-num">01</div>
+      <div class="step-icon">🛒</div>
+      <div class="step-title">Pick Your Treats</div>
+      <div class="step-desc">Choose your items, flavours, and box sizes above</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">02</div>
+      <div class="step-icon">💳</div>
+      <div class="step-title">Checkout Securely</div>
+      <div class="step-desc">Pay safely with card via ...  takes 30 seconds</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">03</div>
+      <div class="step-icon">👩‍🍳</div>
+      <div class="step-title">We Get Baking</div>
+      <div class="step-desc">Your order goes straight to our kitchen, fresh to order</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">04</div>
+      <div class="step-icon">🎉</div>
+      <div class="step-title">Enjoy!</div>
+      <div class="step-desc">Then the hardest part: not eating them all at once!</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo"><svg class="footer-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  zoomAndPan="magnify" viewBox="0 90 375 135"  preserveAspectRatio="xMidYMid meet" version="1.0"><defs><g/><clipPath id="506140d65f"><rect x="0" width="101" y="0" height="229"/></clipPath></defs><g fill="#f00c0c" fill-opacity="1"><g transform="translate(115.081352, 212.470284)"><g><path d="M 6.03125 0.171875 C 5 0.171875 4.066406 -0.0507812 3.234375 -0.5 C 2.398438 -0.945312 1.742188 -1.566406 1.265625 -2.359375 C 0.796875 -3.148438 0.5625 -4.046875 0.5625 -5.046875 C 0.5625 -6.046875 0.796875 -6.941406 1.265625 -7.734375 C 1.742188 -8.523438 2.398438 -9.144531 3.234375 -9.59375 C 4.066406 -10.039062 5.003906 -10.265625 6.046875 -10.265625 C 6.921875 -10.265625 7.707031 -10.109375 8.40625 -9.796875 C 9.113281 -9.492188 9.710938 -9.054688 10.203125 -8.484375 L 8.703125 -7.09375 C 8.015625 -7.882812 7.164062 -8.28125 6.15625 -8.28125 C 5.53125 -8.28125 4.972656 -8.140625 4.484375 -7.859375 C 3.992188 -7.585938 3.609375 -7.207031 3.328125 -6.71875 C 3.054688 -6.226562 2.921875 -5.671875 2.921875 -5.046875 C 2.921875 -4.421875 3.054688 -3.863281 3.328125 -3.375 C 3.609375 -2.882812 3.992188 -2.5 4.484375 -2.21875 C 4.972656 -1.945312 5.53125 -1.8125 6.15625 -1.8125 C 7.164062 -1.8125 8.015625 -2.210938 8.703125 -3.015625 L 10.203125 -1.625 C 9.710938 -1.039062 9.113281 -0.59375 8.40625 -0.28125 C 7.695312 0.0195312 6.90625 0.171875 6.03125 0.171875 Z M 6.03125 0.171875 "/></g></g></g><g fill="#f00c0c" fill-opacity="1"><g transform="translate(125.646823, 212.470284)"><g><path d="M 7.84375 -2.15625 L 3.15625 -2.15625 L 2.265625 0 L -0.125 0 L 4.375 -10.09375 L 6.671875 -10.09375 L 11.1875 0 L 8.734375 0 Z M 7.109375 -3.9375 L 5.515625 -7.796875 L 3.90625 -3.9375 Z M 7.109375 -3.9375 "/></g></g></g><g fill="#f00c0c" fill-opacity="1"><g transform="translate(136.687956, 212.470284)"><g><path d="M 10.453125 -10.09375 L 10.453125 0 L 8.53125 0 L 3.5 -6.125 L 3.5 0 L 1.203125 0 L 1.203125 -10.09375 L 3.125 -10.09375 L 8.140625 -3.96875 L 8.140625 -10.09375 Z M 10.453125 -10.09375 "/></g></g></g><g fill="#f00c0c" fill-opacity="1"><g transform="translate(148.334482, 212.470284)"><g><path d="M 10.390625 0 L 10.375 -6.0625 L 7.40625 -1.0625 L 6.34375 -1.0625 L 3.390625 -5.921875 L 3.390625 0 L 1.203125 0 L 1.203125 -10.09375 L 3.125 -10.09375 L 6.90625 -3.828125 L 10.625 -10.09375 L 12.546875 -10.09375 L 12.578125 0 Z M 10.390625 0 "/></g></g></g><g fill="#f00c0c" fill-opacity="1"><g transform="translate(162.099858, 212.470284)"><g><path d="M 6.09375 0.171875 C 5.039062 0.171875 4.09375 -0.0507812 3.25 -0.5 C 2.40625 -0.957031 1.742188 -1.582031 1.265625 -2.375 C 0.796875 -3.164062 0.5625 -4.054688 0.5625 -5.046875 C 0.5625 -6.035156 0.796875 -6.925781 1.265625 -7.71875 C 1.742188 -8.507812 2.40625 -9.128906 3.25 -9.578125 C 4.09375 -10.035156 5.039062 -10.265625 6.09375 -10.265625 C 7.132812 -10.265625 8.070312 -10.035156 8.90625 -9.578125 C 9.75 -9.128906 10.410156 -8.507812 10.890625 -7.71875 C 11.367188 -6.925781 11.609375 -6.035156 11.609375 -5.046875 C 11.609375 -4.054688 11.367188 -3.164062 10.890625 -2.375 C 10.410156 -1.582031 9.75 -0.957031 8.90625 -0.5 C 8.070312 -0.0507812 7.132812 0.171875 6.09375 0.171875 Z M 6.09375 -1.8125 C 6.6875 -1.8125 7.222656 -1.945312 7.703125 -2.21875 C 8.179688 -2.5 8.554688 -2.882812 8.828125 -3.375 C 9.109375 -3.863281 9.25 -4.421875 9.25 -5.046875 C 9.25 -5.671875 9.109375 -6.226562 8.828125 -6.71875 C 8.554688 -7.207031 8.179688 -7.585938 7.703125 -7.859375 C 7.222656 -8.140625 6.6875 -8.28125 6.09375 -8.28125 C 5.488281 -8.28125 4.945312 -8.140625 4.46875 -7.859375 C 3.988281 -7.585938 3.609375 -7.207031 3.328125 -6.71875 C 3.054688 -6.226562 2.921875 -5.671875 2.921875 -5.046875 C 2.921875 -4.421875 3.054688 -3.863281 3.328125 -3.375 C 3.609375 -2.882812 3.988281 -2.5 4.46875 -2.21875 C 4.945312 -1.945312 5.488281 -1.8125 6.09375 -1.8125 Z M 6.09375 -1.8125 "/></g></g></g><g fill="#f00c0c" fill-opacity="1"><g transform="translate(174.265281, 212.470284)"><g><path d="M 7.625 0 L 5.6875 -2.8125 L 3.53125 -2.8125 L 3.53125 0 L 1.203125 0 L 1.203125 -10.09375 L 5.5625 -10.09375 C 6.457031 -10.09375 7.234375 -9.941406 7.890625 -9.640625 C 8.554688 -9.347656 9.066406 -8.925781 9.421875 -8.375 C 9.773438 -7.832031 9.953125 -7.1875 9.953125 -6.4375 C 9.953125 -5.6875 9.769531 -5.035156 9.40625 -4.484375 C 9.050781 -3.941406 8.539062 -3.53125 7.875 -3.25 L 10.140625 0 Z M 7.59375 -6.4375 C 7.59375 -7 7.40625 -7.429688 7.03125 -7.734375 C 6.664062 -8.035156 6.132812 -8.1875 5.4375 -8.1875 L 3.53125 -8.1875 L 3.53125 -4.671875 L 5.4375 -4.671875 C 6.132812 -4.671875 6.664062 -4.820312 7.03125 -5.125 C 7.40625 -5.4375 7.59375 -5.875 7.59375 -6.4375 Z M 7.59375 -6.4375 "/></g></g></g><g fill="#f00c0c" fill-opacity="1"><g transform="translate(184.85958, 212.470284)"><g><path d="M 9.015625 -1.875 L 9.015625 0 L 1.203125 0 L 1.203125 -10.09375 L 8.828125 -10.09375 L 8.828125 -8.21875 L 3.515625 -8.21875 L 3.515625 -6.03125 L 8.203125 -6.03125 L 8.203125 -4.21875 L 3.515625 -4.21875 L 3.515625 -1.875 Z M 9.015625 -1.875 "/></g></g></g><g transform="matrix(1, 0, 0, 1, 18, 73)"><g clip-path="url(#506140d65f)"><g fill="#f00c0c" fill-opacity="1"><g transform="translate(9.714257, 150.868106)"><g><path d="M 35.578125 -0.5 C 27.890625 -0.320312 21.644531 -1.53125 16.84375 -4.125 C 12.050781 -6.726562 8.539062 -10.085938 6.3125 -14.203125 C 4.082031 -18.316406 2.914062 -22.609375 2.8125 -27.078125 C 2.71875 -31.234375 3.410156 -35.148438 4.890625 -38.828125 C 6.367188 -42.503906 8.429688 -45.519531 11.078125 -47.875 C 13.734375 -50.226562 16.726562 -51.441406 20.0625 -51.515625 C 23.082031 -51.585938 24.617188 -50.582031 24.671875 -48.5 C 24.679688 -47.769531 24.515625 -46.90625 24.171875 -45.90625 C 23.835938 -44.90625 23.691406 -43.523438 23.734375 -41.765625 C 23.804688 -38.535156 24.925781 -36.007812 27.09375 -34.1875 C 29.257812 -32.363281 32.21875 -31.492188 35.96875 -31.578125 C 40.132812 -31.671875 43.5625 -33.050781 46.25 -35.71875 C 48.945312 -38.382812 50.253906 -41.535156 50.171875 -45.171875 C 50.109375 -48.085938 49.09375 -50.382812 47.125 -52.0625 C 45.15625 -53.738281 42.664062 -54.539062 39.65625 -54.46875 C 37.570312 -54.414062 35.894531 -54.894531 34.625 -55.90625 C 33.351562 -56.925781 32.695312 -58.269531 32.65625 -59.9375 C 32.625 -61.59375 33.21875 -63.003906 34.4375 -64.171875 C 35.664062 -65.347656 37.375 -65.960938 39.5625 -66.015625 C 44.757812 -66.140625 49.019531 -67.488281 52.34375 -70.0625 C 55.675781 -72.644531 57.296875 -75.859375 57.203125 -79.703125 C 57.128906 -82.828125 56.132812 -85.25 54.21875 -86.96875 C 52.300781 -88.6875 49.675781 -89.507812 46.34375 -89.4375 C 39.269531 -89.269531 34.617188 -85.523438 32.390625 -78.203125 C 31.328125 -74.640625 29.394531 -72.820312 26.59375 -72.75 C 24.832031 -72.71875 23.410156 -73.492188 22.328125 -75.078125 C 21.253906 -76.671875 20.6875 -78.867188 20.625 -81.671875 C 20.476562 -88.117188 22.003906 -94.035156 25.203125 -99.421875 C 28.398438 -104.804688 32.691406 -109.171875 38.078125 -112.515625 C 43.472656 -115.867188 49.453125 -117.617188 56.015625 -117.765625 C 64.546875 -117.960938 71.4375 -115.832031 76.6875 -111.375 C 81.9375 -106.914062 84.648438 -100.890625 84.828125 -93.296875 C 84.984375 -86.328125 82.726562 -80.179688 78.0625 -74.859375 C 73.40625 -69.546875 67.242188 -65.921875 59.578125 -63.984375 C 57.304688 -63.410156 56.1875 -62.453125 56.21875 -61.109375 C 56.25 -60.066406 57.15625 -59.300781 58.9375 -58.8125 C 63.53125 -57.769531 67.125 -55.296875 69.71875 -51.390625 C 72.3125 -47.492188 73.671875 -42.738281 73.796875 -37.125 C 73.960938 -29.957031 72.410156 -23.65625 69.140625 -18.21875 C 65.878906 -12.789062 61.367188 -8.523438 55.609375 -5.421875 C 49.847656 -2.316406 43.171875 -0.675781 35.578125 -0.5 Z M 35.578125 -0.5 "/></g></g></g><g fill="#ffffff" fill-opacity="1"><g transform="translate(4.634183, 146.015833)"><g><path d="M 35.578125 -0.5 C 27.890625 -0.320312 21.644531 -1.53125 16.84375 -4.125 C 12.050781 -6.726562 8.539062 -10.085938 6.3125 -14.203125 C 4.082031 -18.316406 2.914062 -22.609375 2.8125 -27.078125 C 2.71875 -31.234375 3.410156 -35.148438 4.890625 -38.828125 C 6.367188 -42.503906 8.429688 -45.519531 11.078125 -47.875 C 13.734375 -50.226562 16.726562 -51.441406 20.0625 -51.515625 C 23.082031 -51.585938 24.617188 -50.582031 24.671875 -48.5 C 24.679688 -47.769531 24.515625 -46.90625 24.171875 -45.90625 C 23.835938 -44.90625 23.691406 -43.523438 23.734375 -41.765625 C 23.804688 -38.535156 24.925781 -36.007812 27.09375 -34.1875 C 29.257812 -32.363281 32.21875 -31.492188 35.96875 -31.578125 C 40.132812 -31.671875 43.5625 -33.050781 46.25 -35.71875 C 48.945312 -38.382812 50.253906 -41.535156 50.171875 -45.171875 C 50.109375 -48.085938 49.09375 -50.382812 47.125 -52.0625 C 45.15625 -53.738281 42.664062 -54.539062 39.65625 -54.46875 C 37.570312 -54.414062 35.894531 -54.894531 34.625 -55.90625 C 33.351562 -56.925781 32.695312 -58.269531 32.65625 -59.9375 C 32.625 -61.59375 33.21875 -63.003906 34.4375 -64.171875 C 35.664062 -65.347656 37.375 -65.960938 39.5625 -66.015625 C 44.757812 -66.140625 49.019531 -67.488281 52.34375 -70.0625 C 55.675781 -72.644531 57.296875 -75.859375 57.203125 -79.703125 C 57.128906 -82.828125 56.132812 -85.25 54.21875 -86.96875 C 52.300781 -88.6875 49.675781 -89.507812 46.34375 -89.4375 C 39.269531 -89.269531 34.617188 -85.523438 32.390625 -78.203125 C 31.328125 -74.640625 29.394531 -72.820312 26.59375 -72.75 C 24.832031 -72.71875 23.410156 -73.492188 22.328125 -75.078125 C 21.253906 -76.671875 20.6875 -78.867188 20.625 -81.671875 C 20.476562 -88.117188 22.003906 -94.035156 25.203125 -99.421875 C 28.398438 -104.804688 32.691406 -109.171875 38.078125 -112.515625 C 43.472656 -115.867188 49.453125 -117.617188 56.015625 -117.765625 C 64.546875 -117.960938 71.4375 -115.832031 76.6875 -111.375 C 81.9375 -106.914062 84.648438 -100.890625 84.828125 -93.296875 C 84.984375 -86.328125 82.726562 -80.179688 78.0625 -74.859375 C 73.40625 -69.546875 67.242188 -65.921875 59.578125 -63.984375 C 57.304688 -63.410156 56.1875 -62.453125 56.21875 -61.109375 C 56.25 -60.066406 57.15625 -59.300781 58.9375 -58.8125 C 63.53125 -57.769531 67.125 -55.296875 69.71875 -51.390625 C 72.3125 -47.492188 73.671875 -42.738281 73.796875 -37.125 C 73.960938 -29.957031 72.410156 -23.65625 69.140625 -18.21875 C 65.878906 -12.789062 61.367188 -8.523438 55.609375 -5.421875 C 49.847656 -2.316406 43.171875 -0.675781 35.578125 -0.5 Z M 35.578125 -0.5 "/></g></g></g></g></g><g fill="#f00c0c" fill-opacity="1"><g transform="translate(113.132957, 193.815858)"><g><path d="M 29.53125 -16.015625 L 40.984375 -48.296875 L 53.75 -48.296875 L 53.75 0 L 40.984375 0 L 40.984375 -30.359375 L 31.328125 0 L 21.25 0 L 11.59375 -30.359375 L 11.59375 0 L 4.828125 0 L 4.828125 -48.296875 L 18.078125 -48.296875 Z M 29.53125 -16.015625 "/></g></g><g transform="translate(171.713953, 193.815858)"><g><path d="M 1.71875 0 L 18.625 -48.296875 L 28.5 -48.296875 L 45.40625 0 L 31.875 0 L 27.734375 -12.5625 L 13.171875 -12.5625 L 8.96875 0 Z M 20.421875 -34.5625 L 15.25 -18.765625 L 25.671875 -18.765625 Z M 20.421875 -34.5625 "/></g></g><g transform="translate(218.84095, 193.815858)"><g><path d="M 1.71875 -42.09375 L 1.71875 -48.296875 L 43.1875 -48.296875 L 43.1875 -42.09375 L 28.84375 -42.09375 L 28.84375 0 L 16.078125 0 L 16.078125 -42.09375 Z M 1.71875 -42.09375 "/></g></g><g transform="translate(263.759947, 193.815858)"><g><path d="M 17.59375 -21.046875 L 17.59375 -6.203125 L 38.5 -6.203125 L 38.5 0 L 4.828125 0 L 4.828125 -48.296875 L 37.125 -48.296875 L 37.125 -42.09375 L 17.59375 -42.09375 L 17.59375 -27.25 L 28.15625 -27.25 L 28.15625 -21.046875 Z M 17.59375 -21.046875 "/></g></g><g transform="translate(304.676944, 193.815858)"><g><path d="M 14.96875 -38.78125 C 14.96875 -37.488281 15.597656 -36.359375 16.859375 -35.390625 C 18.128906 -34.429688 19.765625 -33.5 21.765625 -32.59375 C 23.765625 -31.695312 25.90625 -30.742188 28.1875 -29.734375 C 30.46875 -28.722656 32.609375 -27.550781 34.609375 -26.21875 C 36.609375 -24.882812 38.25 -23.285156 39.53125 -21.421875 C 40.820312 -19.554688 41.46875 -17.316406 41.46875 -14.703125 C 41.46875 -11.753906 40.59375 -9.070312 38.84375 -6.65625 C 37.09375 -4.238281 34.695312 -2.328125 31.65625 -0.921875 C 28.625 0.472656 25.15625 1.171875 21.25 1.171875 C 17.207031 1.171875 13.484375 0.332031 10.078125 -1.34375 C 6.671875 -3.019531 3.882812 -5.445312 1.71875 -8.625 L 6.90625 -12.140625 C 10.070312 -7.722656 14.851562 -5.515625 21.25 -5.515625 C 23.820312 -5.515625 25.71875 -5.859375 26.9375 -6.546875 C 28.15625 -7.242188 28.765625 -8.234375 28.765625 -9.515625 C 28.765625 -10.992188 28.117188 -12.257812 26.828125 -13.3125 C 25.546875 -14.375 23.90625 -15.375 21.90625 -16.3125 C 19.90625 -17.257812 17.765625 -18.238281 15.484375 -19.25 C 13.210938 -20.257812 11.078125 -21.421875 9.078125 -22.734375 C 7.078125 -24.046875 5.429688 -25.609375 4.140625 -27.421875 C 2.847656 -29.242188 2.203125 -31.421875 2.203125 -33.953125 C 2.203125 -36.890625 3.109375 -39.53125 4.921875 -41.875 C 6.742188 -44.226562 9.207031 -46.082031 12.3125 -47.4375 C 15.414062 -48.789062 18.925781 -49.46875 22.84375 -49.46875 C 26.425781 -49.46875 29.742188 -48.890625 32.796875 -47.734375 C 35.859375 -46.585938 38.3125 -45.003906 40.15625 -42.984375 L 35.390625 -37.8125 C 33.503906 -39.695312 31.675781 -41.003906 29.90625 -41.734375 C 28.132812 -42.472656 25.960938 -42.84375 23.390625 -42.84375 C 20.671875 -42.84375 18.585938 -42.5 17.140625 -41.8125 C 15.691406 -41.125 14.96875 -40.113281 14.96875 -38.78125 Z M 14.96875 -38.78125 "/></g></g></g><g fill="#ffffff" fill-opacity="1"><g transform="translate(110.937389, 191.620293)"><g><path d="M 29.53125 -16.015625 L 40.984375 -48.296875 L 53.75 -48.296875 L 53.75 0 L 40.984375 0 L 40.984375 -30.359375 L 31.328125 0 L 21.25 0 L 11.59375 -30.359375 L 11.59375 0 L 4.828125 0 L 4.828125 -48.296875 L 18.078125 -48.296875 Z M 29.53125 -16.015625 "/></g></g><g transform="translate(169.518385, 191.620293)"><g><path d="M 1.71875 0 L 18.625 -48.296875 L 28.5 -48.296875 L 45.40625 0 L 31.875 0 L 27.734375 -12.5625 L 13.171875 -12.5625 L 8.96875 0 Z M 20.421875 -34.5625 L 15.25 -18.765625 L 25.671875 -18.765625 Z M 20.421875 -34.5625 "/></g></g><g transform="translate(216.645382, 191.620293)"><g><path d="M 1.71875 -42.09375 L 1.71875 -48.296875 L 43.1875 -48.296875 L 43.1875 -42.09375 L 28.84375 -42.09375 L 28.84375 0 L 16.078125 0 L 16.078125 -42.09375 Z M 1.71875 -42.09375 "/></g></g><g transform="translate(261.564379, 191.620293)"><g><path d="M 17.59375 -21.046875 L 17.59375 -6.203125 L 38.5 -6.203125 L 38.5 0 L 4.828125 0 L 4.828125 -48.296875 L 37.125 -48.296875 L 37.125 -42.09375 L 17.59375 -42.09375 L 17.59375 -27.25 L 28.15625 -27.25 L 28.15625 -21.046875 Z M 17.59375 -21.046875 "/></g></g><g transform="translate(302.481376, 191.620293)"><g><path d="M 14.96875 -38.78125 C 14.96875 -37.488281 15.597656 -36.359375 16.859375 -35.390625 C 18.128906 -34.429688 19.765625 -33.5 21.765625 -32.59375 C 23.765625 -31.695312 25.90625 -30.742188 28.1875 -29.734375 C 30.46875 -28.722656 32.609375 -27.550781 34.609375 -26.21875 C 36.609375 -24.882812 38.25 -23.285156 39.53125 -21.421875 C 40.820312 -19.554688 41.46875 -17.316406 41.46875 -14.703125 C 41.46875 -11.753906 40.59375 -9.070312 38.84375 -6.65625 C 37.09375 -4.238281 34.695312 -2.328125 31.65625 -0.921875 C 28.625 0.472656 25.15625 1.171875 21.25 1.171875 C 17.207031 1.171875 13.484375 0.332031 10.078125 -1.34375 C 6.671875 -3.019531 3.882812 -5.445312 1.71875 -8.625 L 6.90625 -12.140625 C 10.070312 -7.722656 14.851562 -5.515625 21.25 -5.515625 C 23.820312 -5.515625 25.71875 -5.859375 26.9375 -6.546875 C 28.15625 -7.242188 28.765625 -8.234375 28.765625 -9.515625 C 28.765625 -10.992188 28.117188 -12.257812 26.828125 -13.3125 C 25.546875 -14.375 23.90625 -15.375 21.90625 -16.3125 C 19.90625 -17.257812 17.765625 -18.238281 15.484375 -19.25 C 13.210938 -20.257812 11.078125 -21.421875 9.078125 -22.734375 C 7.078125 -24.046875 5.429688 -25.609375 4.140625 -27.421875 C 2.847656 -29.242188 2.203125 -31.421875 2.203125 -33.953125 C 2.203125 -36.890625 3.109375 -39.53125 4.921875 -41.875 C 6.742188 -44.226562 9.207031 -46.082031 12.3125 -47.4375 C 15.414062 -48.789062 18.925781 -49.46875 22.84375 -49.46875 C 26.425781 -49.46875 29.742188 -48.890625 32.796875 -47.734375 C 35.859375 -46.585938 38.3125 -45.003906 40.15625 -42.984375 L 35.390625 -37.8125 C 33.503906 -39.695312 31.675781 -41.003906 29.90625 -41.734375 C 28.132812 -42.472656 25.960938 -42.84375 23.390625 -42.84375 C 20.671875 -42.84375 18.585938 -42.5 17.140625 -41.8125 C 15.691406 -41.125 14.96875 -40.113281 14.96875 -38.78125 Z M 14.96875 -38.78125 "/></g></g></g></svg></div>
+  <div class="footer-links">
+    <a href="index.html">Home</a>
+    <a href="3MATES-menu.html">Menu</a>
+    <a href="index.html#about">About</a>
+    <a href="index.html#reviews">Reviews</a>
+    <a href="mailto:hey@3mates.ca">hey@3mates.ca</a>
+    <a href="https://www.instagram.com/3mates.ca" target="_blank">Instagram</a>
+  </div>
+  <div class="footer-copy">© 2026 3MATES Canmore. Made with LOVE.</div>
+</footer>
+
+<!-- ============================================================
+  SNIPCART — Replace YOUR_PUBLIC_API_KEY with your key from
+  snipcart.com/dashboard > Account > API Keys
+  ============================================================ -->
+<div hidden id="snipcart"
+  data-api-key="YOUR_PUBLIC_API_KEY"
+  data-currency="cad">
+</div>
+<script async src="https://cdn.snipcart.com/themes/v3.3.3/default/snipcart.js"></script>
+
+<script>
+  // ── Ticker ──
+  const tItems = ['Order Online','Fresh to Order','Local Delivery','Canmore Pickup','Brownies','Blondies','Cookies','Banana Bread','S\'mores Bars','Secure Checkout','Made with Love','Baked by 3 Mates'];
+  const t = document.getElementById('ticker');
+  t.innerHTML = (tItems.map(i => `<span class="ticker-item">${i}</span>`).join('') + tItems.map(i => `<span class="ticker-item">${i}</span>`).join(''));
+
+  // ── Filter ──
+  function filterProducts(cat, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.product-card').forEach(card => {
+      card.style.display = (cat === 'all' || card.dataset.cat === cat) ? 'block' : 'none';
+    });
+  }
+
+  // ── Variant selector ──
+  const variantConfig = {
+    blondie:  { 3: { price: 0.00, id: 'blondie-box-3', label: 'Box of 3' }, 6: { price: 0.00, id: 'blondie-box-6', label: 'Box of 6' }, 9: { price: 0.00, id: 'blondie-box-9', label: 'Box of 9' } },
+    cookie:   { 3: { price: 0.00, id: 'cookie-box-3', label: 'Box of 3' }, 6: { price: 0.00, id: 'cookie-box-6', label: 'Box of 6' }, 9: { price: 0.00, id: 'cookie-box-9', label: 'Box of 9' } },
+    banana:   { half: { price: 0.00, id: 'banana-half',   label: 'Half Loaf'}, whole:{ price: 0.00, id: 'banana-whole', label: 'Whole Loaf'} },
+    smores:   { 3: { price: 0.00, id: 'smores-box-3', label: 'Box of 3' }, 6: { price: 0.00, id: 'smores-box-6', label: 'Box of 6' }, 9: { price: 0.00, id: 'smores-box-9', label: 'Box of 9' } },
+  };
+
+  function selectVariant(el, product, size, price) {
+    // Update button styles
+    el.closest('.variant-options').querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    // Update price display
+    const cfg = variantConfig[product][size];
+    const priceEl = document.getElementById(`${product}-price`);
+    priceEl.innerHTML = `$${cfg.price.toFixed(2)}<span>CAD · ${cfg.label}</span>`;
+    // Update snipcart button
+    const btn = document.getElementById(`${product}-btn`);
+    btn.dataset.itemId = cfg.id;
+    btn.dataset.itemPrice = cfg.price;
+    btn.dataset.itemName = btn.dataset.itemName.replace(/—.*/, `— ${cfg.label}`);
+  }
+
+  // ── Add to cart animation ──
+  function animateAdd(btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Added!';
+    btn.classList.add('added');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('added');
+    }, 1800);
+  }
+</script>
+</body>
+</html>
