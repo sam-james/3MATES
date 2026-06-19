@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3 Mates Canmore — Ingredients</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --pink: #FFBDCC;
+    --red: #E80012;
+    --white: #FFFFFF;
+    --dark: #1A0A0E;
+    --mid: #5C2030;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--pink);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* TICKER */
+  .ticker {
+    background: var(--white); color: var(--red);
+    padding: 0.9rem 0; overflow: hidden; display: flex;
+  }
+  .ticker-track {
+    display: flex; white-space: nowrap;
+    animation: ticker 22s linear infinite;
+  }
+  .ticker-item {
+    font-size: 0.78rem; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; padding: 0 2.5rem; flex-shrink: 0;
+    display: flex; align-items: center; gap: 1.5rem;
+  }
+  .ticker-item::after { content: '✦'; font-size: 0.5rem; }
+  @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  /* PAGE */
+  main {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+    text-align: center;
+  }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    color: var(--red); text-decoration: none;
+    font-size: 0.85rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  .ingredients-img {
+    width: 100%;
+    border-radius: 16px;
+    display: block;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--red); color: var(--white);
+    padding: 2rem 4rem;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .footer-links a { color: rgba(255,255,255,0.75); text-decoration: none; font-size: 0.82rem; }
+  .footer-links a:hover { color: var(--white); }
+  .footer-copy { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+
+  @media (max-width: 600px) {
+    footer { padding: 2rem 1.5rem; flex-direction: column; align-items: flex-start; }
+    main { padding: 2rem 1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-track" id="ticker"></div>
+</div>
+
+<!-- PAGE -->
+<main>
+  <img src="ingredients.png" alt="3 Mates Canmore — Full Ingredients List" class="ingredients-img">
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-links">
+    <a href="index.html">Home</a>
+    <a href="3MATES-store.html">Shop</a>
+    <a href="3MATES-menu.html">Menu</a>
+    <a href="mailto:hey@3mates.ca">Email Us</a>
+  </div>
+  <div class="footer-copy">© 2026 3MATES Canmore. Made with LOVE.</div>
+</footer>
+
+<script>
+  const items = ['Ingredients','Allergens','Wheat','Milk','Eggs','Soy','Hazelnuts','Made Fresh','3Mates Canmore'];
+  const t = document.getElementById('ticker');
+  const html = items.map(i => `<span class="ticker-item">${i}</span>`).join('');
+  t.innerHTML = html + html;
+</script>
+</body>
+</html>
